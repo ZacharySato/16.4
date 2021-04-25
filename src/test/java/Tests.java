@@ -23,7 +23,9 @@ public class Tests {
     private static Response<Pet> response;
     private static Response<Deleted> responseDeleted;
     private static Pet update;
+    private static Pet updated;
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @BeforeAll
     static void setup() {
         //тестовый объект
@@ -53,6 +55,7 @@ public class Tests {
         t2.setId(60);
         t2.setName("kusaet");
         update.setTags(List.of(t1, t2));
+        updated = PetMergeUtil.update(specimen, update);
     }
 
     @Test
@@ -60,35 +63,27 @@ public class Tests {
     public void postSuccess() throws IOException {
         response = OPERATOR.create(specimen).execute();
         Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body(), "POST возращает некорректный объект.");
-
+        Assertions.assertEquals(specimen, response.body(), "POST возращает некорректный объект");
         response = OPERATOR.read(specimen.getId()).execute();
-        Assertions.assertEquals(response.code(), OK, "Созданный объект не доступен.");
-        Assertions.assertEquals(specimen, response.body());
+        Assertions.assertEquals(response.code(), OK, "POST Созданный объект не доступен");
+        Assertions.assertEquals(specimen, response.body(), "POST несоответствие результата при запросе");
     }
 
     @Test
     @DisplayName("GET 200")
     public void getSuccess() throws IOException {
-        response = OPERATOR.create(specimen).execute();
-        Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body());
-
+        OPERATOR.create(specimen).execute();
         response = OPERATOR.read(specimen.getId()).execute();
         Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body(), "GET возвращает некорректный объект.");
+        Assertions.assertEquals(specimen, response.body(), "GET возвращает некорректный объект");
     }
 
     @Test
     @DisplayName("DELETE 200")
     public void deleteSuccess() throws IOException {
-        response = OPERATOR.create(specimen).execute();
-        Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body());
-
+        OPERATOR.create(specimen).execute();
         responseDeleted = OPERATOR.delete(specimen.getId()).execute();
         Assertions.assertEquals(responseDeleted.code(), OK);
-
         response = OPERATOR.read(specimen.getId()).execute();
         Assertions.assertEquals(response.code(), NOTFOUND, "DELETE объект не удален");
     }
@@ -97,27 +92,19 @@ public class Tests {
     @DisplayName("PUT 200")
     //работает как POST, поэтому не проходит.
     public void putSuccess() throws IOException {
-        response = OPERATOR.create(specimen).execute();
-        Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body());
-
+        OPERATOR.create(specimen).execute();
         response = OPERATOR.update(update).execute();
-        Assertions.assertEquals(responseDeleted.code(), OK);
-        Assertions.assertEquals(PetMergeUtil.update(specimen, update),
-                response.body(),
-                "PUT несоответствие результата");
-
-        response = OPERATOR.read(specimen.getId()).execute();
         Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(PetMergeUtil.update(specimen, update), response.body());
+        Assertions.assertEquals(updated, response.body(), "PUT несоответствие результата в ответе");
+        response = OPERATOR.read(specimen.getId()).execute();
+        Assertions.assertEquals(response.code(), OK, "PUT обновленный объект не доступен");
+        Assertions.assertEquals(updated, response.body(), "PUT несоответветствие результата при запросе");
     }
 
     @Test
     @DisplayName("GET 404")
     public void getFailure() throws IOException {
-        responseDeleted = OPERATOR.delete(specimen.getId()).execute();
-        Assertions.assertEquals(responseDeleted.code(), OK);
-
+        OPERATOR.delete(specimen.getId()).execute();
         response = OPERATOR.read(specimen.getId()).execute();
         Assertions.assertEquals(response.code(), NOTFOUND, "GET некорректный код ответа");
     }
@@ -125,23 +112,16 @@ public class Tests {
     @Test
     @DisplayName("PUT 404")
     public void putFailure() throws IOException {
-        responseDeleted = OPERATOR.delete(specimen.getId()).execute();
-        Assertions.assertEquals(responseDeleted.code(), OK);
-
+        OPERATOR.delete(specimen.getId()).execute();
         response = OPERATOR.update(update).execute();
-        Assertions.assertEquals(responseDeleted.code(), NOTFOUND, "PUT некорректный код ответа");
+        Assertions.assertEquals(response.code(), NOTFOUND, "PUT некорректный код ответа");
     }
 
     @Test
     @DisplayName("DELETE 404")
     public void deleteFailure() throws IOException {
-        response = OPERATOR.create(specimen).execute();
-        Assertions.assertEquals(response.code(), OK);
-        Assertions.assertEquals(specimen, response.body());
-
-        responseDeleted = OPERATOR.delete(specimen.getId()).execute();
-        Assertions.assertEquals(responseDeleted.code(), OK);
-
+        OPERATOR.create(specimen).execute();
+        OPERATOR.delete(specimen.getId()).execute();
         responseDeleted = OPERATOR.delete(specimen.getId()).execute();
         Assertions.assertEquals(responseDeleted.code(), NOTFOUND, "DELETE некорректный код ответа");
     }
